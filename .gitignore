@@ -1,0 +1,5 @@
+.ruby-version
+.bundle
+.vagrant
+.env
+pkg

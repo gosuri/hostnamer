@@ -1,0 +1,14 @@
+#!/usr/bin/env ruby
+require File.expand_path('../../lib/hostnamer/hostnamer', __FILE__)
+$stdout.sync
+
+begin
+  options = Hostnamer.parse_options(ARGV)
+  ENV['HOSTNAMER_VERBOSE'] = '1' if options[:verbose]
+  $stdout.puts Hostnamer.run(options)
+rescue => e
+  raise e if ENV['DEBUG']
+  abort "hostnamer: failed: #{e.message}"
+ensure
+  ENV.delete('HOSTNAMER_VERBOSE')
+end
