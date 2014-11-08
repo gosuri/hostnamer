@@ -6,7 +6,7 @@ require 'optparse'
 
 module Hostnamer
   module_function
-  VERSION = "1.0.0"
+  VERSION = "1.0.1"
   class DNSInsertFailed < RuntimeError; end
   class DNSQueryFailed  < RuntimeError; end
 
@@ -15,7 +15,7 @@ module Hostnamer
       zoneid    = opts[:zone_id] or raise "zone id must be present, specify using --zone-id ZONEID"
       tags      = opts[:tags]         || []
       name      = opts[:cluster_name] || detect_first_chef_role(opts[:json_attrs]) || 'instance'
-      retries   = opts[:retries]      || 3
+      retries   = opts[:retries]      || 5
       retrywait = opts[:retry_wait]   || 10
       profile   = opts[:profile]
       ip        = detect_ip
@@ -26,8 +26,8 @@ module Hostnamer
           host, domain = determine_available_host(tags, zoneid, profile)
           add_host_record("#{host}.#{domain}", ip, zoneid, profile)
           return host
-        rescue Exception => e
-          log "regisration failed.. retrying in #{retrywait}s"
+        rescue DNSInsertFailed => e
+          log "Route53 update failed.. retrying in #{retrywait}s"
           sleep retrywait
           raise e
         end
@@ -146,8 +146,7 @@ module Hostnamer
       yield
     rescue => e
       n = n - 1
-      (debug "retrying #{n} times" and retry) if n > 0
-      raise e
+      retry if n > 0
     end
   end
 
@@ -155,9 +154,9 @@ module Hostnamer
     msg = "hostnamer: #{msg}"
     if ENV['HOSTNAMER_VERBOSE']
       if doprint
-        $stdout.print(msg) 
+        $stderr.print(msg) 
       else
-        $stdout.puts(msg)
+        $stderr.puts(msg)
       end
     end
   end
@@ -193,6 +192,8 @@ module Hostnamer
   def parse_options(argv)
     options = {}
     options[:json_attrs] = "/etc/chef/node.json"
+    options[:retry_wait] = 10
+    options[:retries] = 5
     parser = OptionParser.new do |opts|
       opts.banner = "Usage: hostnamer [options]"
       opts.on "-Z", "--zone-id ZONEID", "Route 53 zone id" do |z|
@@ -210,11 +211,11 @@ module Hostnamer
       opts.on "-p", "--profile [PROFILE]", "AWS user profile. Uses the current IAM or the default profile located under ~/.aws" do |p|
         options[:profile] = p
       end  
-      opts.on "-r", "--retries [RETRIES]", "Number of times to retry before failing. Defaults to 3" do |r|
+      opts.on "-r", "--retries [RETRIES]", "Number of times to retry before failing. Defaults to #{options[:retries]}" do |r|
         options[:retries] = r
       end
-      opts.on "-w", "--retry-wait SECONDS", "Retry wait time. Defaults to 10s" do |w|
-        opptions[:retry_wait] = w
+      opts.on "-w", "--retry-wait SECONDS", "Retry wait time. Defaults to #{options[:retry_wait]}s" do |w|
+        options[:retry_wait] = w
       end
       opts.on("-v", "--[no-]verbose", "Run verbosely") do |v|
         options[:verbose] = v

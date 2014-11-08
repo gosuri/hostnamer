@@ -6,7 +6,7 @@ require 'dotenv/tasks'
 $version = Hostnamer::VERSION
 $profile = ENV['PROFILE'] || 'default'
 
-ENV['S3_BUCKET'] ||= 'demandbase-pkgs'
+ENV['S3_BUCKET'] ||= 'demandbase-pkgs-public'
 
 desc 'Package .deb, .gem files under pkg'
 task 'package'  do

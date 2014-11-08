@@ -16,7 +16,7 @@ Usage: hostnamer [options]
     -j, --json-attributes [PATH]     Chef json attributes file. Defaults to /etc/chef/node.json
     -t, --tags [TAG,TAG]             Tags to postpend, eg: --tags production,california
     -p, --profile [PROFILE]          AWS user profile. Uses the current IAM or the default profile located under ~/.aws
-    -r, --retries [RETRIES]          Number of times to retry before failing. Defaults to 3
+    -r, --retries [RETRIES]          Number of times to retry before failing. Defaults to 5``:wq
     -w, --retry-wait SECONDS         Retry wait time. Defaults to 10s
     -v, --[no-]verbose               Run verbosely
         --version                    Show version
