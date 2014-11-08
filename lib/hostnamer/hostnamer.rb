@@ -6,7 +6,7 @@ require 'optparse'
 
 module Hostnamer
   module_function
-  VERSION = "1.0.1"
+  VERSION = "1.0.2"
   class DNSInsertFailed < RuntimeError; end
   class DNSQueryFailed  < RuntimeError; end
 
