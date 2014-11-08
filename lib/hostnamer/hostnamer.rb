@@ -50,7 +50,7 @@ module Hostnamer
         end
       rescue Exception => e
         raise "#{nodefile} is not found or invalid. Specify a cluster name using --cluster-name"
-      end 
+      end
     end
   end
 
@@ -72,9 +72,10 @@ module Hostnamer
     log "determining_available_host" do
       n = 0
       domain  = detect_domain(zoneid, profile)
-      records = list_record_sets(zoneid, profile)
       host = (tags + ["%02d" % n]).join('-')
+      records = list_record_sets(zoneid, "#{host}.#{domain}", profile)
       while records.include?("#{host}.#{domain}") do
+        records = list_record_sets(zoneid, "#{host}.#{domain}", profile)
         log "checking availability for #{host}.#{domain}"
         host = (tags + ["%02d" % n+=1]).join('-')
       end
@@ -95,9 +96,9 @@ module Hostnamer
     end
   end
 
-  def list_record_sets(zoneid, profile=nil)
+  def list_record_sets(zoneid, hostname, profile=nil)
     log "list_record_sets" do
-      cmd = "aws route53 list-resource-record-sets --hosted-zone-id #{zoneid} --output text"
+      cmd = "aws route53 list-resource-record-sets --hosted-zone-id #{zoneid} --output text --start-record-name #{hostname}"
       cmd = "#{cmd} --profile #{profile}" if profile
       debug "exec: #{cmd}"
       records = `#{cmd} | grep RESOURCERECORDSETS | awk '{print $2}'`.strip
@@ -107,12 +108,12 @@ module Hostnamer
   end
 
   def record_unavailable?(record)
-    `dig #{record} +short`.strip != '' 
+    `dig #{record} +short`.strip != ''
   end
 
   def add_host_record(host, ip, zoneid, profile = nil)
     log "add_host_record: #{host}" do
-      payload = Tempfile.new('payload') 
+      payload = Tempfile.new('payload')
       payload.write %Q(
           {
             "Comment": "Added by hostnamer during instance bootstrap",
@@ -154,7 +155,7 @@ module Hostnamer
     msg = "hostnamer: #{msg}"
     if ENV['HOSTNAMER_VERBOSE']
       if doprint
-        $stderr.print(msg) 
+        $stderr.print(msg)
       else
         $stderr.puts(msg)
       end
@@ -210,7 +211,7 @@ module Hostnamer
       end
       opts.on "-p", "--profile [PROFILE]", "AWS user profile. Uses the current IAM or the default profile located under ~/.aws" do |p|
         options[:profile] = p
-      end  
+      end
       opts.on "-r", "--retries [RETRIES]", "Number of times to retry before failing. Defaults to #{options[:retries]}" do |r|
         options[:retries] = r
       end
@@ -242,13 +243,13 @@ module Hostnamer
           log "detected zone id: #{zid}"
           zid.strip
         else
-          raise "could not detect zone_id from #{domain} because \"zone_id\" TXT record is missing. Either insert a TXT record in the DNS or specify --zone-id ZONEID" 
+          raise "could not detect zone_id from #{domain} because \"zone_id\" TXT record is missing. Either insert a TXT record in the DNS or specify --zone-id ZONEID"
           nil
         end
       end
     end
   end
-  
+
   def detect_soa_ttl(domain)
     log "detect_soa_ttl" do
       if answer = `dig +nocmd +noall +answer soa #{domain}`
