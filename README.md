@@ -27,8 +27,9 @@ Usage: hostnamer [options]
 ### Ubuntu/Debian
 
 ```
-wget https://s3.amazonaws.com/demandbase-pkgs-public/hostnamer_1.0.0_all.deb
-sudo dpkg --install hostnamer_1.0.0_all.deb
+version=1.0.2
+wget https://s3.amazonaws.com/demandbase-pkgs-public/hostnamer_${version}_all.deb
+sudo dpkg --install hostnamer_${version}_all.deb
 sudo apt-get update -y && apt-get -f install # install any missing dependencies
 ```
 
